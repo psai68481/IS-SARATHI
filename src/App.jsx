@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Topbar from './components/layout/Topbar';
 import Sidebar from './components/layout/Sidebar';
 import ExportReportModal from './components/common/ExportReportModal';
@@ -25,12 +25,33 @@ export default function App() {
 
   const handleSelectPreset = (presetId) => {
     setActivePreset(presetId);
-    const found = appData.tenderPresets.find(p => p.id === presetId);
+    const found = appData.tenderPresets?.find(p => p.id === presetId);
     if (found) {
       setCustomQuery(found.query);
       setAppData(prev => ({ ...prev, tenderQuery: found.query }));
     }
   };
+
+  const sidebarStats = useMemo(() => {
+    const recCount = appData?.recommendations?.length ?? 0;
+    const gapCount = appData?.gaps?.length ?? 0;
+    const conflictCount = appData?.conflicts?.length ?? 0;
+    const covMap = appData?.recommendations?.[0]?.coverageMap || [];
+    const coverage = covMap.length > 0 
+      ? Math.round((covMap.filter(c => c.covered).length / covMap.length) * 100) 
+      : 75;
+
+    return {
+      tenderAnalysis: String(appData?.extractedRequirements?.length || 5),
+      recommendations: appData?.recommendations?.[0]?.confidence ? `${appData.recommendations[0].confidence}%` : '91%',
+      relatedStandards: String(appData?.recommendations?.[0]?.relatedStandards?.length || 3),
+      coverage: coverage,
+      conflicts: conflictCount + gapCount,
+      whyNot: String(appData?.recommendations?.[0]?.whyNotAlternatives?.length || 3),
+      history: String(appData?.historicalDecisions?.length || 5),
+      learning: '1 Signal',
+    };
+  }, [appData]);
 
   const renderActiveTab = () => {
     switch (activeTab) {
@@ -87,6 +108,8 @@ export default function App() {
           onSelectTab={setActiveTab}
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
+          stats={sidebarStats}
+          data={appData}
         />
 
         {/* Right Main Content Area */}

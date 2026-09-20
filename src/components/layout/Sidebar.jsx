@@ -14,19 +14,48 @@ import {
   X
 } from 'lucide-react';
 
-export const TABS = [
+const DEFAULT_TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
-  { id: 'tender-analysis', label: 'Tender Analysis', icon: FileText, badge: '4' },
-  { id: 'recommendations', label: 'AI Recommendations', icon: Bot, badge: '91%' },
-  { id: 'related-standards', label: 'Related Standards', icon: GitFork, badge: '3' },
-  { id: 'coverage', label: 'Requirement Coverage', icon: CheckSquare, badge: '75%' },
-  { id: 'conflicts-gaps', label: 'Conflicts & Gaps', icon: AlertTriangle, badge: '1 Flag', alert: true },
-  { id: 'why-not', label: 'Why Not?', icon: HelpCircle, badge: '3' },
-  { id: 'history', label: 'Historical Decisions', icon: History, badge: '5' },
-  { id: 'learning', label: 'AI Override & Learning', icon: BrainCircuit, badge: '1 Signal' },
+  { id: 'tender-analysis', label: 'Tender Analysis', icon: FileText, badge: '0' },
+  { id: 'recommendations', label: 'AI Recommendations', icon: Bot, badge: '0' },
+  { id: 'related-standards', label: 'Related Standards', icon: GitFork, badge: '0' },
+  { id: 'coverage', label: 'Requirement Coverage', icon: CheckSquare, badge: '0%' },
+  { id: 'conflicts-gaps', label: 'Conflicts & Gaps', icon: AlertTriangle, badge: '0', alert: true },
+  { id: 'why-not', label: 'Why Not?', icon: HelpCircle, badge: '0' },
+  { id: 'history', label: 'Historical Decisions', icon: History, badge: '0' },
+  { id: 'learning', label: 'AI Override & Learning', icon: BrainCircuit, badge: '0' },
 ];
 
-export default function Sidebar({ activeTab, onSelectTab, isOpen, onClose }) {
+export default function Sidebar({ activeTab, onSelectTab, isOpen, onClose, stats = {} }) {
+  const tabs = DEFAULT_TABS.map((tab) => {
+    if (tab.id === 'tender-analysis') {
+      return { ...tab, badge: stats.tenderAnalysis ?? tab.badge };
+    }
+    if (tab.id === 'recommendations') {
+      return { ...tab, badge: stats.recommendations !== undefined ? String(stats.recommendations) : tab.badge };
+    }
+    if (tab.id === 'related-standards') {
+      return { ...tab, badge: stats.relatedStandards !== undefined ? String(stats.relatedStandards) : tab.badge };
+    }
+    if (tab.id === 'coverage') {
+      return { ...tab, badge: stats.coverage !== undefined ? `${stats.coverage}%` : tab.badge };
+    }
+    if (tab.id === 'conflicts-gaps') {
+      const badge = stats.conflicts !== undefined ? String(stats.conflicts) : tab.badge;
+      return { ...tab, badge, alert: stats.conflicts > 0 };
+    }
+    if (tab.id === 'why-not') {
+      return { ...tab, badge: stats.whyNot !== undefined ? String(stats.whyNot) : tab.badge };
+    }
+    if (tab.id === 'history') {
+      return { ...tab, badge: stats.history !== undefined ? String(stats.history) : tab.badge };
+    }
+    if (tab.id === 'learning') {
+      return { ...tab, badge: stats.learning !== undefined ? String(stats.learning) : tab.badge };
+    }
+    return tab;
+  });
+
   const handleTabClick = (tabId) => {
     onSelectTab(tabId);
     if (onClose) {
@@ -72,7 +101,7 @@ export default function Sidebar({ activeTab, onSelectTab, isOpen, onClose }) {
               Procurement Workflow
             </div>
             <nav className="space-y-1">
-              {TABS.map((tab) => {
+              {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
 

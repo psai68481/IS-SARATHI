@@ -1,13 +1,14 @@
 import { DashboardData } from '@/types';
 
 export const GLOBAL_MOCK_DATA: DashboardData = {
-  tenderQuery: "We need industrial helmets for construction workers with impact resistance and electrical insulation",
+  tenderQuery: "We need industrial helmets for construction workers with impact resistance and electrical insulation ultra weight less than 250",
   
   extractedRequirements: [
     { field: "Product Type", value: "Industrial Safety Helmet", category: "Classification", confidence: 98 },
-    { field: "Impact Resistance", value: "Required", category: "Mechanical Safety", confidence: 95 },
-    { field: "Electrical Insulation", value: "Required", category: "Electrical Safety", confidence: 92 },
-    { field: "Operating Temp", value: "-10°C to 50°C", category: "Environmental", confidence: 89 }
+    { field: "Impact Resistance", value: "Required (50J Drop Test)", category: "Mechanical Safety", confidence: 96 },
+    { field: "Electrical Insulation", value: "Required (10kV Dielectric)", category: "Electrical Safety", confidence: 94 },
+    { field: "Weight Limit", value: "< 250g (Ultra-Lightweight)", category: "Physical Ergonomics", confidence: 95 },
+    { field: "Operating Temp", value: "-10°C to 50°C", category: "Environmental", confidence: 90 }
   ],
 
   recommendations: [
@@ -29,8 +30,8 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
       keyClauses: [
         { clause: "Clause 5.2", title: "Shock Absorption Test (Impact Energy: 50 Joules)" },
         { clause: "Clause 6.1", title: "Electrical Resistance Test (Proof Voltage 10kV)" },
-        { clause: "Clause 7.3", title: "Temperature Conditioning (-10°C to +50°C)" },
-        { clause: "Clause 8.4", title: "Penetration Resistance" }
+        { clause: "Clause 4.3", title: "Shell Weight Limit (Nominal 340g - 420g)" },
+        { clause: "Clause 7.3", title: "Temperature Conditioning (-10°C to +50°C)" }
       ],
       relatedStandards: [
         {
@@ -66,6 +67,12 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
           covered: true
         },
         {
+          requirement: "Weight Limit (< 250g)",
+          evidence: "Clause 4.3",
+          detail: "Standard specifies nominal weight 340g - 420g. Requested <250g is below certified structural threshold.",
+          covered: false
+        },
+        {
           requirement: "Operating Temperature",
           evidence: "Clause 7.3",
           detail: "Performance maintained post 4h conditioning at -10°C and +50°C.",
@@ -80,24 +87,47 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
       ],
       whyNotAlternatives: [
         {
-          isNumber: "IS 4770:1991",
+          isNumber: "IS 4770",
           title: "Rubber Gloves for Electrical Purposes",
           confidence: 67,
           reason: "Covers rubber gloves, not helmets - different product scope and safety zone."
         },
         {
-          isNumber: "IS 4151:2015",
+          isNumber: "IS 4151",
           title: "Protective Helmets for Two-Wheeler Motorcyclists",
           confidence: 58,
-          reason: "Automotive vehicular helmet specification; lacks industrial high-voltage electrical insulation and side ventilation requirements."
+          reason: "Automotive vehicular helmet specification; lacks industrial high-voltage electrical insulation."
         },
         {
-          isNumber: "IS 9562:1980",
+          isNumber: "IS 9562",
           title: "Non-Metallic Safety Helmets for Mining",
           confidence: 72,
-          reason: "Mining standard excludes surface construction lightweight shell ergonomic profiles required in tender."
+          reason: "Mining standard excludes surface construction lightweight shell ergonomic profiles."
         }
       ]
+    },
+    {
+      isNumber: "IS 15298 (Part 2)",
+      title: "Personal Protective Equipment - Head Protection",
+      type: "Related Standard",
+      confidence: 78,
+      status: "Current",
+      latestVersion: "2019",
+      amendment: "None",
+      certification: {
+        required: false,
+        scheme: "N/A",
+        status: "Voluntary"
+      },
+      category: "Personal Protective Equipment",
+      description: "Covers general head protection apparatus criteria conforming with ISO alignment for international export compliance.",
+      keyClauses: [
+        { clause: "Clause 4.1", title: "General Shell Ergonomics" },
+        { clause: "Clause 6.3", title: "Lateral Deformation Testing" }
+      ],
+      relatedStandards: [],
+      coverageMap: [],
+      whyNotAlternatives: []
     }
   ],
 
@@ -121,36 +151,6 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
       humanDecision: "IS 2925:1984 (94%)",
       reason: "Standard highway civil construction specs; direct match with Clause 5.2 impact rating.",
       validationStatus: "Validated"
-    },
-    {
-      caseId: "PROC-2024-0142",
-      title: "Metro Tunnel Underground Excavation Helmets",
-      department: "DMRC Safety Wing",
-      date: "2024-01-19",
-      aiRecommendation: "IS 2925:1984 (88%)",
-      humanDecision: "IS 9562 (Mining Grade) (85%)",
-      reason: "Underground tunnel bore environment deemed equivalent to underground coal mining dampness.",
-      validationStatus: "Validated"
-    },
-    {
-      caseId: "PROC-2023-0902",
-      title: "Municipal Water Supply Pipeline Maintenance",
-      department: "Jal Board Technical Cell",
-      date: "2023-11-05",
-      aiRecommendation: "IS 2925:1984 (92%)",
-      humanDecision: "Pending Officer Verification",
-      reason: "Awaiting clarification on chemical splash resistance addendum.",
-      validationStatus: "Unverified"
-    },
-    {
-      caseId: "PROC-2023-0784",
-      title: "Solar Substation Maintenance Crew Gear",
-      department: "SECI Engineering Unit",
-      date: "2023-09-12",
-      aiRecommendation: "IS 4770 (Rubber PPE)",
-      humanDecision: "IS 2925 + IS 4770 (Combo)",
-      reason: "Tender mixed helmet and glove requirements; rejected single-standard classification.",
-      validationStatus: "Rejected"
     }
   ],
 
@@ -161,8 +161,14 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
 
   conflicts: [
     {
+      tenderSpec: "Weight limit: < 250 grams total weight (ultra-light)",
+      standardSpec: "IS 2925 Clause 4.3 specifies nominal weight 340g - 420g to ensure structural shock absorption",
+      severity: "Warning - Human review recommended",
+      impact: "Ultra-lightweight shells below 250g may fail the 50 Joule impact penetration test unless carbon-fiber reinforced and specifically certified."
+    },
+    {
       tenderSpec: "Operating temperature: 100°C continuous",
-      standardSpec: "IS 2925:1984 maximum rated: 80°C",
+      standardSpec: "IS 2925 maximum rated: 80°C (Clause 7.3 specifies -10°C to +50°C standard, 80°C special grade)",
       severity: "Warning - Human review recommended",
       impact: "Polymer breakdown risk under sustained 100°C heat exposure without specialized aerospace composite formulation."
     }
@@ -195,8 +201,8 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
   tenderPresets: [
     {
       id: "helmet",
-      title: "Construction Worker Industrial Helmet",
-      query: "We need industrial helmets for construction workers with impact resistance and electrical insulation",
+      title: "Construction Worker Industrial Helmet (<250g)",
+      query: "We need industrial helmets for construction workers with impact resistance and electrical insulation ultra weight less than 250",
       department: "Public Works Department (PWD)"
     },
     {
@@ -204,12 +210,6 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
       title: "Fire-Resistant Building Wiring",
       query: "Procurement of low-smoke zero-halogen (FRLS) copper wiring cables for commercial hospital buildings with 1100V rating",
       department: "Health Infrastructure Board"
-    },
-    {
-      id: "transformer",
-      title: "33kV Power Distribution Transformer",
-      query: "Supply and commissioning of 33/11kV oil-immersed power distribution transformers with energy efficiency Level-2 certification",
-      department: "State Electricity Transmission Corp"
     }
   ]
 };

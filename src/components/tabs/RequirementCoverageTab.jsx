@@ -9,12 +9,34 @@ import {
 } from 'lucide-react';
 
 export default function RequirementCoverageTab({ data, onNavigateTab }) {
-  const topRec = data.recommendations[0];
-  const coverageMap = topRec.coverageMap || [];
+  const topRec = data?.recommendations?.[0];
+  const coverageMap = topRec?.coverageMap || [];
   
-  const coveredCount = coverageMap.filter(c => c.covered).length;
+  const coveredCount = coverageMap.filter(c => c && c.covered).length;
   const totalCount = coverageMap.length;
-  const coveragePercent = Math.round((coveredCount / totalCount) * 100);
+  const coveragePercent = totalCount > 0 ? Math.round((coveredCount / totalCount) * 100) : 0;
+
+  if (!topRec || totalCount === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              <CheckSquare className="w-5 h-5 text-teal-600" />
+              Requirement Coverage & Clause Evidence Matrix
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              No verified clause coverage is available until a tender is analyzed against the IS-SARATHI corpus.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+          Run the analysis workflow to populate clause-by-clause evidence from the verified standards database.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -147,7 +169,9 @@ export default function RequirementCoverageTab({ data, onNavigateTab }) {
           <div className="flex items-center gap-2 text-slate-600">
             <Info className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              1 item requires procurement clause customization: <strong>Installation Requirement</strong> is a contractual scope item.
+              {coveredCount === totalCount
+                ? 'All displayed requirements are supported by evidence from the verified standard corpus.'
+                : 'Any uncovered requirements should be reviewed by the procurement authority before tender issuance.'}
             </span>
           </div>
 

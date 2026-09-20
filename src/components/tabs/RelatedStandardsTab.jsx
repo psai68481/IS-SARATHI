@@ -198,13 +198,13 @@ export default function RelatedStandardsTab({ data }) {
             </div>
 
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-              <span className="font-bold text-slate-500 block uppercase text-[10px]">Relationship to IS 2925</span>
+              <span className="font-bold text-slate-500 block uppercase text-[10px]">Relationship to Selected Standard</span>
               <span className="font-semibold text-slate-800 mt-1 block">
                 {selectedNode.type === "Test Method" 
-                  ? "Normative reference for Clause 5.2 Drop Tower calibration" 
+                  ? "Cross-reference for test protocol validation and evidence handling" 
                   : selectedNode.type === "Material Standard" 
-                  ? "Raw resin HDPE polymer melt-flow index validation" 
-                  : "Harmonized occupational ergonomics classification"}
+                  ? "Material and performance compatibility check against the selected standard" 
+                  : "Related governance or harmonization reference for the selected procurement scope"}
               </span>
             </div>
 

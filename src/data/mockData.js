@@ -1,13 +1,14 @@
-// Global mock data structure for IS-SARATHI
+// Global mock data structure for IS-SARATHI (UI Showcase & Static Deployment)
 
 export const GLOBAL_MOCK_DATA = {
-  tenderQuery: "We need industrial helmets for construction workers with impact resistance and electrical insulation",
+  tenderQuery: "We need industrial helmets for construction workers with impact resistance and electrical insulation ultra weight less than 250",
   
   extractedRequirements: [
     { field: "Product Type", value: "Industrial Safety Helmet", category: "Classification", confidence: 98 },
-    { field: "Impact Resistance", value: "Required", category: "Mechanical Safety", confidence: 95 },
-    { field: "Electrical Insulation", value: "Required", category: "Electrical Safety", confidence: 92 },
-    { field: "Operating Temp", value: "-10°C to 50°C", category: "Environmental", confidence: 89 }
+    { field: "Impact Resistance", value: "Required (50J Drop Test)", category: "Mechanical Safety", confidence: 96 },
+    { field: "Electrical Insulation", value: "Required (10kV Dielectric)", category: "Electrical Safety", confidence: 94 },
+    { field: "Weight Limit", value: "< 250g (Ultra-Lightweight)", category: "Physical Ergonomics", confidence: 95 },
+    { field: "Operating Temp", value: "-10°C to 50°C", category: "Environmental", confidence: 90 }
   ],
 
   recommendations: [
@@ -29,8 +30,8 @@ export const GLOBAL_MOCK_DATA = {
       keyClauses: [
         { clause: "Clause 5.2", title: "Shock Absorption Test (Impact Energy: 50 Joules)" },
         { clause: "Clause 6.1", title: "Electrical Resistance Test (Proof Voltage 10kV)" },
-        { clause: "Clause 7.3", title: "Temperature Conditioning (-10°C to +50°C)" },
-        { clause: "Clause 8.4", title: "Penetration Resistance" }
+        { clause: "Clause 4.3", title: "Shell Weight & Thickness Limit (Nominal 340g - 420g)" },
+        { clause: "Clause 7.3", title: "Temperature Conditioning (-10°C to +50°C)" }
       ],
       relatedStandards: [
         {
@@ -64,6 +65,12 @@ export const GLOBAL_MOCK_DATA = {
           evidence: "Clause 6.1",
           detail: "Leakage current not exceeding 1.2 mA at 10,000 V AC (50 Hz).",
           covered: true
+        },
+        {
+          requirement: "Weight Limit (< 250g)",
+          evidence: "Clause 4.3",
+          detail: "Standard specifies nominal weight 340g - 420g. Requested <250g is below certified structural threshold.",
+          covered: false
         },
         {
           requirement: "Operating Temperature",
@@ -206,8 +213,14 @@ export const GLOBAL_MOCK_DATA = {
 
   conflicts: [
     {
-      tenderSpec: "Operating temperature: 100°C",
-      standardSpec: "IS 2925 maximum rated: 80°C",
+      tenderSpec: "Weight limit: < 250 grams total weight (ultra-light)",
+      standardSpec: "IS 2925 Clause 4.3 specifies nominal weight 340g - 420g to ensure structural shock absorption",
+      severity: "Warning - Human review recommended",
+      impact: "Ultra-lightweight shells below 250g may fail the 50 Joule impact penetration test unless carbon-fiber reinforced and specifically type-tested under BIS special certification."
+    },
+    {
+      tenderSpec: "Operating temperature: 100°C continuous",
+      standardSpec: "IS 2925 maximum rated: 80°C (Clause 7.3 specifies -10°C to +50°C standard, 80°C special grade)",
       severity: "Warning - Human review recommended",
       impact: "Polymer breakdown risk under sustained 100°C heat exposure without specialized aerospace composite formulation."
     }
@@ -217,13 +230,13 @@ export const GLOBAL_MOCK_DATA = {
   stats: {
     totalTendersAnalyzed: 47,
     avgConfidence: 84,
-    standardsInKB: 28,
+    standardsInKB: 62,
     pendingReviews: 5,
     accuracyRate: 94.2,
     avgProcessingTime: "1.4s"
   },
 
-  // Chart: Confidence distribution across recent recommendations (DEMO DATA)
+  // Chart: Confidence distribution across recent recommendations
   confidenceDistribution: [
     { range: "90-100% (High)", count: 24, fill: "#10B981" },
     { range: "80-89% (Optimal)", count: 14, fill: "#028090" },
@@ -231,35 +244,77 @@ export const GLOBAL_MOCK_DATA = {
     { range: "< 70% (Review Req.)", count: 3, fill: "#EF4444" }
   ],
 
-  // Chart: Domain breakdown in Knowledge Base (28 Verified Standards)
+  // Chart: Domain breakdown in Knowledge Base
   domainBreakdown: [
-    { domain: "PPE & Occupational Safety", count: 7, share: "25%" },
-    { domain: "Pipes & Plumbing", count: 6, share: "21%" },
-    { domain: "Electrical & Electronics", count: 6, share: "21%" },
-    { domain: "Civil & Construction Materials", count: 4, share: "14%" },
-    { domain: "Chemical & Plastics", count: 3, share: "11%" },
-    { domain: "Mechanical & Tooling", count: 2, share: "7%" }
+    { domain: "PPE & Occupational Safety", count: 18, share: "29%" },
+    { domain: "Electrical & Electronics", count: 15, share: "24%" },
+    { domain: "Civil & Construction Materials", count: 14, share: "23%" },
+    { domain: "Mechanical & Tooling", count: 9, share: "15%" },
+    { domain: "Chemical & Plastics", count: 6, share: "9%" }
   ],
 
   // Alternative tender presets for testing/demo
   tenderPresets: [
     {
       id: "helmet",
-      title: "Construction Worker Industrial Helmet",
-      query: "We need industrial helmets for construction workers with impact resistance and electrical insulation",
-      department: "Public Works Department (PWD)"
+      title: "Construction Worker Industrial Helmet (<250g)",
+      query: "We need industrial helmets for construction workers with impact resistance and electrical insulation ultra weight less than 250",
+      department: "Public Works Department (PWD)",
+      sampleFile: "Tender_Doc_PWD_Helmets_2024.pdf",
+      fileType: "PDF"
     },
     {
       id: "cable",
       title: "Fire-Resistant Building Wiring",
       query: "Procurement of low-smoke zero-halogen (FRLS) copper wiring cables for commercial hospital buildings with 1100V rating",
-      department: "Health Infrastructure Board"
+      department: "Health Infrastructure Board",
+      sampleFile: "Hospital_FRLS_Wiring_Specs.png",
+      fileType: "PNG"
     },
     {
       id: "transformer",
       title: "33kV Power Distribution Transformer",
       query: "Supply and commissioning of 33/11kV oil-immersed power distribution transformers with energy efficiency Level-2 certification",
-      department: "State Electricity Transmission Corp"
+      department: "State Electricity Transmission Corp",
+      sampleFile: "Substation_Transformer_Tender.pdf",
+      fileType: "PDF"
+    }
+  ],
+
+  // Sample OCR Scanned Documents for quick 1-click demonstration
+  ocrSamples: [
+    {
+      id: "ocr-helmet-pdf",
+      name: "Tender_Notice_PWD_Helmets_2024.pdf",
+      type: "PDF",
+      size: "248 KB",
+      pages: "1 Page (Vector & Scanned Text)",
+      department: "Public Works Dept, Govt of India",
+      date: "10-Sept-2026",
+      extractedText: "We need industrial helmets for construction workers with impact resistance and electrical insulation ultra weight less than 250",
+      previewSnippet: "TENDER NOTICE NO: PWD/ELECT/2026/089\nItem 01: Industrial Safety Helmets for construction labor\nKey Specs: Impact resistance (50J drop test), Electrical insulation (proof voltage), Ultra-weight requirement: Less than 250 grams total weight for extended overhead shift wear."
+    },
+    {
+      id: "ocr-helmet-png",
+      name: "Scanned_BoQ_Helmets_Spec.png",
+      type: "PNG",
+      size: "612 KB",
+      dimensions: "1920 x 1080 px",
+      department: "Central Vigilance & Safety Division",
+      date: "08-Sept-2026",
+      extractedText: "We need industrial helmets for construction workers with impact resistance and electrical insulation ultra weight less than 250",
+      previewSnippet: "[SCANNED DOCUMENT OCR RECOGNIZED]\nSection B.2: Personnel Protective Gear (Head Protection)\nSpecifications: Impact resistance shock absorption certified; High voltage electrical resistance; Ultra-lightweight shell under 250 grams."
+    },
+    {
+      id: "ocr-pipe-pdf",
+      name: "UPVC_Potable_Water_Pipes_Tender.pdf",
+      type: "PDF",
+      size: "380 KB",
+      pages: "2 Pages",
+      department: "State Jal Nigam Board",
+      date: "04-Sept-2026",
+      extractedText: "Procurement of high pressure unplasticized UPVC pipes class 3 for municipal potable drinking water distribution network with lead-free certification",
+      previewSnippet: "JAL NIGAM MUNICIPAL WATER SUPPLY TENDER\nScope: Supply of UPVC pressure pipes for potable drinking water supply."
     }
   ]
 };

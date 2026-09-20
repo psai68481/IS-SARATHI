@@ -23,9 +23,16 @@ import {
 import ConfidenceBadge from '../common/ConfidenceBadge';
 
 export default function DashboardTab({ data, onNavigateTab }) {
-  const stats = data.stats;
-  const distribution = data.confidenceDistribution;
-  const topRec = data.recommendations[0];
+  const stats = data?.stats || {
+    totalTendersAnalyzed: 0,
+    avgConfidence: 0,
+    standardsInKB: 0,
+    pendingReviews: 0,
+    accuracyRate: 0,
+    avgProcessingTime: '0s'
+  };
+  const distribution = data?.confidenceDistribution || [];
+  const topRec = data?.recommendations?.[0];
 
   return (
     <div className="space-y-6">

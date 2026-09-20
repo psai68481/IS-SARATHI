@@ -10,8 +10,30 @@ import {
 } from 'lucide-react';
 
 export default function ConflictsGapsTab({ data, onNavigateTab }) {
-  const gaps = data.gaps || [];
-  const conflicts = data.conflicts || [];
+  const gaps = data?.gaps || [];
+  const conflicts = data?.conflicts || [];
+
+  if (gaps.length === 0 && conflicts.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Specification Conflicts & Missing Gaps
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              No verified conflict or gap record is available until an analysis run is performed.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+          Run the tender analysis to populate verified conflict and gap checks from the standards corpus.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -88,13 +110,13 @@ export default function ConflictsGapsTab({ data, onNavigateTab }) {
                 {/* Indian Standard Specification Box */}
                 <div className="bg-teal-50/50 p-4 rounded-xl border border-teal-200">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-teal-800 mb-1">
-                    IS 2925 Standard Baseline
+                    Applicable Standard Baseline
                   </div>
                   <div className="text-sm font-bold text-teal-950">
                     {item.standardSpec}
                   </div>
                   <div className="mt-2 text-xs text-teal-700 font-medium">
-                    &bull; Governed by BIS certified test envelope
+                    &bull; Governed by the verified standard reference used in the corpus
                   </div>
                 </div>
 
@@ -152,7 +174,7 @@ export default function ConflictsGapsTab({ data, onNavigateTab }) {
                 </p>
                 <div className="mt-2 text-[11px] text-amber-800 flex items-center gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                  <span>Recommended Action: Incorporate mandatory IS 2925 (Part 2) drop test clause in Section 4.2.</span>
+                  <span>Recommended Action: confirm the missing technical requirement with the procurement authority and relevant standard authority before issuing the tender.</span>
                 </div>
               </div>
             </div>
