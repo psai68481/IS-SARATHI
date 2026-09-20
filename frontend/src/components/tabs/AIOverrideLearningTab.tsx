@@ -30,12 +30,12 @@ export default function AIOverrideLearningTab({ data }: AIOverrideLearningTabPro
     setIsSubmitting(true);
     const feedbackPayload = {
       case_id: `PROC-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: "Procurement Officer Case Verification",
-      department: "Public Works Department",
+      title: 'Procurement Officer Case Verification',
+      department: 'Public Works Department',
       tender_query: data.tenderQuery,
-      ai_recommendation: topRec?.isNumber || 'IS 2925:1984',
-      ai_confidence: topRec?.confidence || 91,
-      human_choice: selectedAction === 'OVERRIDE' ? customStandard : topRec?.isNumber,
+      ai_recommendation: topRec?.isNumber || 'Not available',
+      ai_confidence: topRec?.confidence || 0,
+      human_choice: selectedAction === 'OVERRIDE' ? customStandard : topRec?.isNumber || 'Not available',
       justification: justification,
       validation_status: selectedAction === 'VALIDATE' ? 'Validated' : (selectedAction === 'OVERRIDE' ? 'Validated' : 'Rejected')
     };
@@ -170,7 +170,7 @@ export default function AIOverrideLearningTab({ data }: AIOverrideLearningTabPro
                 type="text"
                 value={customStandard}
                 onChange={(e) => setCustomStandard(e.target.value)}
-                placeholder="e.g. IS 15298 (Part 2) or IS 2925 + IS 4770"
+                placeholder="e.g. standard code + related test method"
                 className="w-full text-xs sm:text-sm p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
               />

@@ -201,8 +201,8 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
   tenderPresets: [
     {
       id: "helmet",
-      title: "Construction Worker Industrial Helmet (<250g)",
-      query: "We need industrial helmets for construction workers with impact resistance and electrical insulation ultra weight less than 250",
+      title: "Construction Worker Industrial Helmet",
+      query: "We need industrial helmets for construction workers with impact resistance and electrical insulation",
       department: "Public Works Department (PWD)"
     },
     {
@@ -210,6 +210,12 @@ export const GLOBAL_MOCK_DATA: DashboardData = {
       title: "Fire-Resistant Building Wiring",
       query: "Procurement of low-smoke zero-halogen (FRLS) copper wiring cables for commercial hospital buildings with 1100V rating",
       department: "Health Infrastructure Board"
+    },
+    {
+      id: "transformer",
+      title: "33kV Power Distribution Transformer",
+      query: "Supply and commissioning of 33/11kV oil-immersed power distribution transformers with energy efficiency Level-2 certification",
+      department: "State Electricity Transmission Corp"
     }
   ]
 };

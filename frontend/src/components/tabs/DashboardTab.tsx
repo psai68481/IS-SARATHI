@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import ConfidenceBadge from '../common/ConfidenceBadge';
 import { DashboardData } from '@/types';
+import { getDashboardStatsApi } from '@/lib/api';
 
 interface DashboardTabProps {
   data: DashboardData;
@@ -29,9 +30,29 @@ interface DashboardTabProps {
 }
 
 export default function DashboardTab({ data, onNavigateTab }: DashboardTabProps) {
-  const stats = data.stats;
-  const distribution = data.confidenceDistribution;
-  const topRec = data.recommendations[0];
+  // Live dataset metrics (no hardcoded counts). Falls back to current-session values.
+  const [live, setLive] = useState<Record<string, number> | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    getDashboardStatsApi().then(s => { if (mounted && s) setLive(s); });
+    return () => { mounted = false; };
+  }, []);
+
+  const recs = data?.recommendations || [];
+  const stats = {
+    totalTendersAnalyzed: live?.tendersAnalyzed ?? data?.stats?.totalTendersAnalyzed ?? 0,
+    avgConfidence: recs.length
+      ? Math.round(recs.reduce((a, r) => a + r.confidence, 0) / recs.length)
+      : (data?.stats?.avgConfidence ?? 0),
+    standardsInKB: live?.standardsInKB ?? data?.stats?.standardsInKB ?? 0,
+    pendingReviews: live?.pendingReviews ?? data?.stats?.pendingReviews ?? 0,
+    accuracyRate: live?.verifiedMatches && live?.tendersAnalyzed
+      ? Math.round(100 * live.verifiedMatches / live.tendersAnalyzed)
+      : 0,
+    avgProcessingTime: '—'
+  };
+  const distribution = data?.confidenceDistribution || [];
+  const topRec = recs[0];
 
   return (
     <div className="space-y-6">
@@ -64,7 +85,7 @@ export default function DashboardTab({ data, onNavigateTab }: DashboardTabProps)
               onClick={() => onNavigateTab('recommendations')}
               className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold backdrop-blur-sm transition-all duration-150 border border-white/20 flex items-center gap-1.5"
             >
-              <span>View Recommendations ({topRec?.isNumber || 'IS 2925'})</span>
+              <span>View Recommendations{topRec ? ` (${topRec.isNumber})` : ''}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -88,12 +109,9 @@ export default function DashboardTab({ data, onNavigateTab }: DashboardTabProps)
             <span className="text-3xl font-extrabold text-slate-900 font-sans">
               {stats.totalTendersAnalyzed}
             </span>
-            <span className="text-xs font-semibold text-emerald-600 flex items-center">
-              +12% this month
-            </span>
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Automated clause matching applied
+            Live count from the audit trail
           </div>
         </div>
 
@@ -111,12 +129,9 @@ export default function DashboardTab({ data, onNavigateTab }: DashboardTabProps)
             <span className="text-3xl font-extrabold text-slate-900 font-sans">
               {stats.avgConfidence}%
             </span>
-            <span className="text-xs font-semibold text-emerald-600">
-              High Precision
-            </span>
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Across 4,200+ requirement clauses
+            Average of current recommendation confidences
           </div>
         </div>
 
@@ -134,12 +149,9 @@ export default function DashboardTab({ data, onNavigateTab }: DashboardTabProps)
             <span className="text-3xl font-extrabold text-slate-900 font-sans">
               {stats.standardsInKB}
             </span>
-            <span className="text-xs font-semibold text-teal-600">
-              BIS Direct
-            </span>
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Includes test methods & materials
+            {live?.clausesInKB ? `${live.clausesInKB} verified clause rows` : 'Standards in the verified knowledge base'}
           </div>
         </div>
 
@@ -228,7 +240,11 @@ export default function DashboardTab({ data, onNavigateTab }: DashboardTabProps)
             </ResponsiveContainer>
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-            <span>High-accuracy tier (&ge;80%): <strong>38 / 47 (80.8%)</strong></span>
+            <span>
+              {live
+                ? `Verified matches: ${live.verifiedMatches ?? 0} / ${live.tendersAnalyzed ?? 0} analyses`
+                : 'Connect to the backend for live dataset metrics'}
+            </span>
             <span className="text-teal-600 font-semibold cursor-pointer hover:underline" onClick={() => onNavigateTab('recommendations')}>
               Review AI Model Calibration &rarr;
             </span>
@@ -279,7 +295,7 @@ export default function DashboardTab({ data, onNavigateTab }: DashboardTabProps)
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center justify-between">
               <span>Domain Index Coverage</span>
-              <span className="text-[10px] text-slate-500">62 Standards</span>
+              <span className="text-[10px] text-slate-500">{stats.standardsInKB} Standards</span>
             </div>
             <div className="space-y-2">
               {data.domainBreakdown.slice(0, 3).map((d, i) => (

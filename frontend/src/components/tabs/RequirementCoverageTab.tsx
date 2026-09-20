@@ -22,6 +22,28 @@ export default function RequirementCoverageTab({ data, onNavigateTab }: Requirem
   const totalCount = coverageList.length;
   const coveragePercent = totalCount > 0 ? Math.round((coveredCount / totalCount) * 100) : 0;
 
+  if (!topRec || totalCount === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              <CheckSquare className="w-5 h-5 text-teal-600" />
+              Requirement Coverage & Clause Mapping
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              No verified clause coverage is available until a tender is analyzed against the IS-SARATHI corpus.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+          Run the analysis workflow to populate clause-by-clause evidence from the verified standards database.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       
@@ -53,7 +75,7 @@ export default function RequirementCoverageTab({ data, onNavigateTab }: Requirem
             {topRec?.isNumber} &bull; {coveragePercent}% Verified
           </div>
           <p className="text-xs text-slate-500">
-            3 critical safety specifications map directly to mandatory clauses. 1 requirement requires manual procurement addendum.
+            Evidence-backed clause alignment is shown below for the currently selected recommendation. Review unmatched items with the procurement authority before release.
           </p>
         </div>
 
@@ -120,7 +142,7 @@ export default function RequirementCoverageTab({ data, onNavigateTab }: Requirem
         <div className="flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
           <div className="text-xs text-amber-900">
-            <span className="font-bold">1 Uncovered Tender Spec Detected:</span> Site installation guidelines are not governed by standard PPE product manufacturing norms.
+            <span className="font-bold">Coverage status:</span> {coveredCount === totalCount ? 'All visible requirements are supported by evidence from the active corpus.' : 'Some requirements may need human review before procurement issuance.'}
           </div>
         </div>
         <button

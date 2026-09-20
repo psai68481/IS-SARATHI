@@ -1,0 +1,11 @@
+frontend/.next
+frontend/node_modules
+backend/__pycache__
+backend/**/__pycache__
+backend/is_sarathi.db
+backend/is_sarathi.db.old*
+backend/storage
+*.log
+.freebuff
+deploy-is-sarathi
+.git

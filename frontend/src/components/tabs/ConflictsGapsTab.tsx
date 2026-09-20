@@ -18,6 +18,28 @@ export default function ConflictsGapsTab({ data, onNavigateTab }: ConflictsGapsT
   const conflicts = data.conflicts || [];
   const gaps = data.gaps || [];
 
+  if (gaps.length === 0 && conflicts.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Compliance Conflicts & Specification Gaps
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              No verified conflict or gap record is available until an analysis run is performed.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+          Run the tender analysis to populate verified conflict and gap checks from the standards corpus.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       

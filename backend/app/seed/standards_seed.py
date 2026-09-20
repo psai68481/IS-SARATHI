@@ -15,6 +15,7 @@ STANDARDS_DATA = [
     {
         "is_number": "IS 2925:1984",
         "title": "Specification for Industrial Safety Helmets",
+        "title_ml": "औद्योगिक सुरक्षा हेलमेट",
         "scope": "Specifies physical and performance requirements, methods of test, and marking for industrial safety helmets providing head protection against falling objects, mechanical impact, and high-voltage electrical shocks up to 10 kV.",
         "ics_code": "13.340.20",
         "category": "Personal Protective Equipment",
@@ -148,6 +149,7 @@ STANDARDS_DATA = [
     {
         "is_number": "IS 4985:2021",
         "title": "Unplasticized PVC (UPVC) Pipes for Potable Water Supplies",
+        "title_ml": "पेयजल आपूर्ति हेतु अप्लास्टिकाइज्ड पीवीसी (यूपीवीसी) पाइप",
         "scope": "Specifies dimensions and pressure requirements for unplasticized polyvinyl chloride pipes intended for cold potable water supplies, irrigation, and industrial fluid transmission.",
         "ics_code": "23.040.20",
         "category": "Pipes & Plumbing",
@@ -262,6 +264,7 @@ STANDARDS_DATA = [
     {
         "is_number": "IS 694:2010",
         "title": "Polyvinyl Chloride Insulated Cables for Working Voltages up to and including 1100 V",
+        "title_ml": "1100 वोल्ट तक के कार्यकारी वोल्टेज हेतु पॉलीविनाइल क्लोराइड इन्सुलेटेड केबल",
         "scope": "Specifies single and multi-core PVC insulated copper and aluminum electric cables for fixed wiring in residential, commercial and industrial installations up to 1100V.",
         "ics_code": "29.060.20",
         "category": "Electrical & Electronics",
@@ -337,6 +340,7 @@ STANDARDS_DATA = [
     {
         "is_number": "IS 1180 (Part 1):2014",
         "title": "Outdoor Type Oil Immersed Distribution Transformers up to 2500 kVA, 33 kV",
+        "title_ml": "2500 kVA, 33 kV तक के आउटडोर प्रकार के तेल जलित वितरण ट्रांसफॉर्मर",
         "scope": "Energy efficiency levels 1, 2, and 3, dielectric oil parameters, temperature rise, and total loss thresholds for power distribution transformers.",
         "ics_code": "29.180",
         "category": "Electrical & Electronics",
@@ -375,6 +379,7 @@ STANDARDS_DATA = [
     {
         "is_number": "IS 269:2015",
         "title": "Ordinary Portland Cement - Specification",
+        "title_ml": "ऑर्डिनरी पोर्टलैंड सीमेंट - विनिर्देश",
         "scope": "Specification for 33, 43, and 53 grade ordinary Portland cement, physical and chemical testing, compressive strength at 3, 7, and 28 days.",
         "ics_code": "91.100.10",
         "category": "Civil & Construction Materials",
@@ -580,6 +585,7 @@ def seed_database_and_vectors(db: Session):
             std = Standard(
                 is_number=item["is_number"],
                 title=item["title"],
+                title_ml=item.get("title_ml"),
                 scope=item["scope"],
                 ics_code=item.get("ics_code"),
                 category=item.get("category"),
@@ -590,7 +596,11 @@ def seed_database_and_vectors(db: Session):
                 certification_required=item.get("certification_required", False),
                 certification_scheme=item.get("certification_scheme"),
                 certification_status=item.get("certification_status", "Voluntary"),
-                qco_notification_number=item.get("qco_notification_number")
+                qco_notification_number=item.get("qco_notification_number"),
+                exclusions=item.get("exclusions"),
+                product_type=item.get("product_type"),
+                technical_keywords=item.get("technical_keywords"),
+                verification_status=item.get("verification_status", "VERIFIED")
             )
             db.add(std)
             db.commit()
@@ -598,6 +608,7 @@ def seed_database_and_vectors(db: Session):
         else:
             # Update metadata fields
             std.title = item["title"]
+            std.title_ml = item.get("title_ml")
             std.scope = item["scope"]
             std.category = item.get("category")
             std.status = item.get("status", "CURRENT")
@@ -607,6 +618,10 @@ def seed_database_and_vectors(db: Session):
             std.certification_scheme = item.get("certification_scheme")
             std.certification_status = item.get("certification_status", "Voluntary")
             std.qco_notification_number = item.get("qco_notification_number")
+            std.exclusions = item.get("exclusions")
+            std.product_type = item.get("product_type")
+            std.technical_keywords = item.get("technical_keywords")
+            std.verification_status = item.get("verification_status", "VERIFIED")
             db.commit()
             db.refresh(std)
 

@@ -1,0 +1,22 @@
+spaCy en_core_web_sm model not found. Using regex NLP engine.
+Pinecone cloud connection error (The official Pinecone python package has been renamed from `pinecone-client` to `pinecone`. Please remove `pinecone-client` from your project dependencies and add `pinecone` instead. See the README at https://github.com/pinecone-io/pinecone-python-client for more information on using the python SDK.). Using local in-memory vector index.
+C:\Users\pabba\OneDrive\Smart Inidia Hackathon - Copy\backend\app\services\gemini_service.py:15: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [21644]
+INFO:     Waiting for application startup.
+2026-09-13 10:35:56,806 - is_sarathi.main - INFO - Initializing IS-SARATHI Database & Tables...
+2026-09-13 10:35:56,828 - is_sarathi.seed - INFO - Starting Authoritative Knowledge Base Seeding...
+2026-09-13 10:35:57,327 - is_sarathi.seed - INFO - Successfully seeded 28 standards into database & vector store.
+2026-09-13 10:35:57,329 - is_sarathi.main - INFO - IS-SARATHI AI Recommendation Engine Ready on /api/v1
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2026-09-13 10:57:06,110 - is_sarathi.document - INFO - OCR dependencies (pytesseract/tesseract/pdf2image/poppler) not fully available - scanned PDFs will be flagged, not processed.
+2026-09-13 10:57:06,166 - pypdf._reader - WARNING - EOF marker not found
+2026-09-13 10:57:06,167 - is_sarathi.document - WARNING - Unreadable PDF t3.pdf: Stream has ended unexpectedly

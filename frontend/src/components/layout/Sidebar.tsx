@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   LayoutDashboard,
   FileText,
@@ -14,6 +13,7 @@ import {
   X,
   LucideIcon
 } from 'lucide-react';
+import { DashboardData } from '@/types';
 
 export interface TabItem {
   id: string;
@@ -23,26 +23,102 @@ export interface TabItem {
   alert?: boolean;
 }
 
-export const TABS: TabItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
-  { id: 'tender-analysis', label: 'Tender Analysis', icon: FileText, badge: '4' },
-  { id: 'recommendations', label: 'AI Recommendations', icon: Bot, badge: '91%' },
-  { id: 'related-standards', label: 'Related Standards', icon: GitFork, badge: '3' },
-  { id: 'coverage', label: 'Requirement Coverage', icon: CheckSquare, badge: '75%' },
-  { id: 'conflicts-gaps', label: 'Conflicts & Gaps', icon: AlertTriangle, badge: '1 Flag', alert: true },
-  { id: 'why-not', label: 'Why Not?', icon: HelpCircle, badge: '3' },
-  { id: 'history', label: 'Historical Decisions', icon: History, badge: '5' },
-  { id: 'learning', label: 'AI Override & Learning', icon: BrainCircuit, badge: '1 Signal' },
-];
+/**
+ * Builds the sidebar tab list with LIVE badges derived from the current
+ * analysis data - no hardcoded numbers. Badges update as soon as a new
+ * tender is analyzed (feature: sidebar numbers reflect tender analysis).
+ */
+/** Extracts the IS number (e.g. "2925") from strings like "IS 2925:1984 (91%)". */
+function isNumberKey(value: string): string {
+  const m = value.match(/IS\s*(\d+)/i);
+  return m ? m[1] : value.trim().toLowerCase();
+}
+
+export function buildTabs(data: DashboardData): TabItem[] {
+  const recs = data.recommendations || [];
+  const primary = recs[0];
+  const related = primary?.relatedStandards || [];
+  const coverageMap = primary?.coverageMap || [];
+  const coveredCount = coverageMap.filter((c) => c.covered).length;
+  const coveragePct = coverageMap.length
+    ? Math.round((coveredCount / coverageMap.length) * 100)
+    : null;
+  const conflicts = (data.conflicts || []).length;
+  const gaps = (data.gaps || []).length;
+  const whyNot = primary?.whyNotAlternatives || [];
+  const decisions = data.historicalDecisions || [];
+  const overrideSignals = decisions.filter(
+    (d) => isNumberKey(d.aiRecommendation) !== isNumberKey(d.humanDecision)
+  ).length;
+
+  return [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
+    {
+      id: 'tender-analysis',
+      label: 'Tender Analysis',
+      icon: FileText,
+      badge: data.extractedRequirements?.length
+        ? String(data.extractedRequirements.length)
+        : null,
+    },
+    {
+      id: 'recommendations',
+      label: 'AI Recommendations',
+      icon: Bot,
+      badge: primary ? `${Math.round(primary.confidence)}%` : null,
+    },
+    {
+      id: 'related-standards',
+      label: 'Related Standards',
+      icon: GitFork,
+      badge: related.length ? String(related.length) : null,
+    },
+    {
+      id: 'coverage',
+      label: 'Requirement Coverage',
+      icon: CheckSquare,
+      badge: coveragePct !== null ? `${coveragePct}%` : null,
+    },
+    {
+      id: 'conflicts-gaps',
+      label: 'Conflicts & Gaps',
+      icon: AlertTriangle,
+      badge: conflicts ? `${conflicts} Flag${conflicts > 1 ? 's' : ''}` : gaps ? `${gaps} Gap${gaps > 1 ? 's' : ''}` : null,
+      alert: conflicts > 0,
+    },
+    {
+      id: 'why-not',
+      label: 'Why Not?',
+      icon: HelpCircle,
+      badge: whyNot.length ? String(whyNot.length) : null,
+    },
+    {
+      id: 'history',
+      label: 'Historical Decisions',
+      icon: History,
+      badge: decisions.length ? String(decisions.length) : null,
+    },
+    {
+      id: 'learning',
+      label: 'AI Override & Learning',
+      icon: BrainCircuit,
+      badge: overrideSignals ? `${overrideSignals} Signal${overrideSignals > 1 ? 's' : ''}` : null,
+      alert: overrideSignals > 0,
+    },
+  ];
+}
 
 interface SidebarProps {
   activeTab: string;
   onSelectTab: (tabId: string) => void;
   isOpen: boolean;
   onClose?: () => void;
+  data: DashboardData;
 }
 
-export default function Sidebar({ activeTab, onSelectTab, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ activeTab, onSelectTab, isOpen, onClose, data }: SidebarProps) {
+  const tabs = buildTabs(data);
+
   const handleTabClick = (tabId: string) => {
     onSelectTab(tabId);
     if (onClose) {
@@ -88,7 +164,7 @@ export default function Sidebar({ activeTab, onSelectTab, isOpen, onClose }: Sid
               Procurement Workflow
             </div>
             <nav className="space-y-1">
-              {TABS.map((tab) => {
+              {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
 

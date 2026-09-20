@@ -10,6 +10,7 @@ from app.seed.standards_seed import seed_database_and_vectors
 from app.api.auth import router as auth_router
 from app.api.standards import router as standards_router
 from app.api.analyze import router as analyze_router
+from app.api.analyze_document import router as analyze_document_router
 from app.api.recommend import router as recommend_router
 from app.api.validate import router as validate_router
 from app.api.version import router as version_router
@@ -23,7 +24,7 @@ logger = logging.getLogger("is_sarathi.main")
 async def lifespan(app: FastAPI):
     logger.info("Initializing IS-SARATHI Database & Tables...")
     Base.metadata.create_all(bind=engine)
-    
+
     # Auto-seed database and vector index
     try:
         db = SessionLocal()
@@ -43,10 +44,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Setup CORS for Next.js / React
+# Setup CORS: locked down in production via ALLOWED_ORIGINS env var;
+# wildcard only when no explicit production origin is configured.
+_origins = settings.cors_origins
+if settings.ENVIRONMENT != "production":
+    _origins = list(set(_origins + ["http://localhost:3000", "http://127.0.0.1:3000"]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In development allow all for seamless frontend connectivity
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,9 +63,9 @@ prefix = settings.API_V1_PREFIX
 app.include_router(auth_router, prefix=prefix)
 app.include_router(standards_router, prefix=prefix)
 app.include_router(analyze_router, prefix=prefix)
+app.include_router(analyze_document_router, prefix=prefix)
 app.include_router(recommend_router, prefix=prefix)
 app.include_router(validate_router, prefix=prefix)
-app.include_router(version_router, prefix=prefix)
 app.include_router(certification_router, prefix=prefix)
 app.include_router(feedback_router, prefix=prefix)
 

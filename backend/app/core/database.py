@@ -5,6 +5,13 @@ from app.core.config import settings
 
 logger = logging.getLogger("is_sarathi.database")
 
+# Normalize legacy 'postgres://' scheme (some managed providers emit it);
+# SQLAlchemy only understands 'postgresql://'.
+if settings.DATABASE_URL.startswith("postgres://"):
+    settings.DATABASE_URL = settings.DATABASE_URL.replace(
+        "postgres://", "postgresql://", 1
+    )
+
 # Handle SQLite vs PostgreSQL connection arguments
 connect_args = {}
 if "sqlite" in settings.DATABASE_URL:

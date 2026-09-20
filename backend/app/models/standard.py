@@ -13,6 +13,7 @@ class Standard(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     is_number = Column(String(100), unique=True, nullable=False, index=True)
     title = Column(Text, nullable=False, index=True)
+    title_ml = Column(Text, nullable=True)  # Native-language title (Hindi/Telugu) for multilingual matching
     scope = Column(Text, nullable=False)
     ics_code = Column(String(50), nullable=True, index=True)
     category = Column(String(150), nullable=True, index=True)
@@ -22,6 +23,12 @@ class Standard(Base):
     revision_year = Column(Integer, nullable=True)
     latest_version = Column(String(150), nullable=True)
     amendment = Column(Text, nullable=True)
+
+    # Generic applicability metadata (structured, dataset-driven — not just title/keywords)
+    exclusions = Column(Text, nullable=True)             # explicit product exclusions from the standard's scope clause
+    product_type = Column(String(200), nullable=True)    # normalized product family the standard covers
+    technical_keywords = Column(String(500), nullable=True)  # comma-separated technical vocabulary of the standard
+    verification_status = Column(String(50), default="VERIFIED")  # VERIFIED | PARTIALLY_VERIFIED | UNVERIFIED
     
     # Certification / BIS Quality Control Order (QCO)
     certification_required = Column(Boolean, default=False)

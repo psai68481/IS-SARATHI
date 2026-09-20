@@ -1,0 +1,45 @@
+# IS-SARATHI backend container for Vercel Services
+# Ships the FULL feature set: FastAPI + OCR (Tesseract) + Poppler + spaCy + Postgres.
+# Vercel builds this image and runs it as an autoscaling Function on Fluid compute.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8000
+
+# System dependencies for the document-processing pipeline (SIH26108 stage 4):
+#  - tesseract-ocr        : OCR engine executable
+#  - tesseract-ocr-eng/hin/tel : language packs (English + Hindi + Telugu tenders)
+#  - poppler-utils        : pdf2image rendering backend for scanned-PDF OCR
+#  - libpq5               : PostgreSQL client library (psycopg2 runtime)
+#  - curl                 : healthcheck convenience
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+        tesseract-ocr-hin \
+        tesseract-ocr-tel \
+        poppler-utils \
+        libpq5 \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies first (layer cache on code changes)
+COPY requirements-deploy.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements-deploy.txt
+
+# spaCy model (used for generic noun-phrase extraction when present)
+RUN python -m spacy download en_core_web_sm || echo "spaCy model download skipped"
+
+# Application source
+COPY app ./app
+
+# Non-writable-cache-safe storage dir for uploaded documents
+RUN mkdir -p /tmp/storage/documents
+
+EXPOSE 8000
+
+# Vercel routes to $PORT; uvicorn binds 0.0.0.0
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -12,3 +12,5 @@ scratch/
 backend/.env
 *.db
 *.sqlite
+.vercel
+.env*

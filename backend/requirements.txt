@@ -21,8 +21,11 @@ huggingface-hub>=0.21.4
 pinecone-client>=3.1.0
 google-generativeai>=0.4.1
 
-# Document Storage (AWS S3)
+# Document Storage (free local or S3-compatible object storage)
 boto3>=1.34.60
+
+# Tender document processing: PDF text extraction + OCR (SIH26108 stage 4)
+pypdf>=4.0.0
 
 # HTTP & Utilities
 requests>=2.31.0

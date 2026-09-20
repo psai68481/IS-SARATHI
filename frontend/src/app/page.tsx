@@ -93,6 +93,7 @@ export default function Home() {
           onSelectTab={setActiveTab}
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
+          data={data}
         />
 
         {/* Right Main Content Area */}
