@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import Topbar from './components/layout/Topbar';
 import Sidebar from './components/layout/Sidebar';
 import ExportReportModal from './components/common/ExportReportModal';
-import { GLOBAL_MOCK_DATA } from './data/mockData';
+import { GLOBAL_MOCK_DATA, TENDER_CASES } from './data/mockData';
 
 // Tab components
 import DashboardTab from './components/tabs/DashboardTab';
@@ -25,11 +25,12 @@ export default function App() {
 
   const handleSelectPreset = (presetId) => {
     setActivePreset(presetId);
-    const found = appData.tenderPresets?.find(p => p.id === presetId);
-    if (found) {
-      setCustomQuery(found.query);
-      setAppData(prev => ({ ...prev, tenderQuery: found.query }));
-    }
+    const targetCase = TENDER_CASES[presetId] || TENDER_CASES.helmet;
+    setCustomQuery(targetCase.tenderQuery);
+    setAppData(prev => ({
+      ...prev,
+      ...targetCase
+    }));
   };
 
   const sidebarStats = useMemo(() => {
@@ -61,7 +62,7 @@ export default function App() {
         return (
           <TenderAnalysisTab
             data={appData}
-            setData={setAppData}
+            onSelectCase={handleSelectPreset}
             onNavigateTab={setActiveTab}
             customQuery={customQuery}
             setCustomQuery={setCustomQuery}
