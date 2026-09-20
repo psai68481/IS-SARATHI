@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
-    # Database
-    DATABASE_URL: str = "sqlite:///./is_sarathi.db"
+    # Database - dynamically resolved relative to backend directory
+    DATABASE_URL: str = f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'is_sarathi.db').replace('\\', '/')}"
 
     # Redis Cache
     REDIS_URL: str = "redis://localhost:6379/0"
