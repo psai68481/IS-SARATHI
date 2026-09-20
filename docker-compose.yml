@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------------
+  # 1. PostgreSQL Database
+  # -------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: is_sarathi_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-is_sarathi}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  # 2. Redis Cache
+  # -------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: is_sarathi_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  # 3. FastAPI AI Backend
+  # -------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: is_sarathi_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/is_sarathi
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - PINECONE_API_KEY=${PINECONE_API_KEY:-}
+      - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT:-us-east-1}
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-is-sarathi-standards}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-sarathi_super_secret_jwt_key_sih_2026_cognitive_crew_secure_token_9988}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION=${AWS_REGION:-ap-south-1}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-is-sarathi-standards-docs}
+      - USE_LOCAL_STORAGE=${USE_LOCAL_STORAGE:-true}
+    volumes:
+      - ./backend:/app
+      - local_storage:/app/storage
+
+  # -------------------------------------------------------------------
+  # 4. Next.js TypeScript Frontend
+  # -------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: is_sarathi_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres_data:
+  redis_data:
+  local_storage:

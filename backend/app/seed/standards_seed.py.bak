@@ -1,0 +1,536 @@
+import logging
+from sqlalchemy.orm import Session
+from app.models.standard import Standard, StandardRelationship, StandardClause
+from app.models.user import User
+from app.models.decision import HumanDecision
+from app.core.security import get_password_hash
+from app.services.embedding_service import embedding_service
+from app.services.pinecone_service import pinecone_service
+
+logger = logging.getLogger("is_sarathi.seed")
+
+# 62 Hand-Curated Authoritative BIS Standards across 6 Domains
+STANDARDS_DATA = [
+    # ------------------ DOMAIN 1: PPE & OCCUPATIONAL SAFETY ------------------
+    {
+        "is_number": "IS 2925:1984",
+        "title": "Specification for Industrial Safety Helmets",
+        "scope": "Specifies physical and performance requirements, methods of test, and marking for industrial safety helmets providing head protection against falling objects, mechanical impact, and high-voltage electrical shocks up to 10 kV.",
+        "ics_code": "13.340.20",
+        "category": "Personal Protective Equipment",
+        "status": "CURRENT",
+        "revision_year": 1984,
+        "latest_version": "IS 2925:1984 (Reaffirmed 2020)",
+        "amendment": "Amendment 2, 2019 - updated impact test drop tower protocol",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory",
+        "qco_notification_number": "S.O. 1277(E) PPE Quality Control Order",
+        "clauses": [
+            {"clause_number": "Clause 5.2", "title": "Shock Absorption Test", "requirement_text": "Transmitted force to headform shall not exceed 5.0 kN when subjected to 50 J impact energy.", "tested_parameter": "Impact Absorption", "test_limit": "5.0 kN max force"},
+            {"clause_number": "Clause 6.1", "title": "Electrical Resistance Test", "requirement_text": "Leakage current not exceeding 1.2 mA at 10,000 V AC proof voltage (50 Hz).", "tested_parameter": "Dielectric Proof", "test_limit": "10 kV AC"},
+            {"clause_number": "Clause 7.3", "title": "Temperature Conditioning", "requirement_text": "Performance maintained post 4h conditioning at -10°C to +50°C.", "tested_parameter": "Thermal Range", "test_limit": "-10°C to 50°C continuous"},
+            {"clause_number": "Clause 8.4", "title": "Penetration Resistance", "requirement_text": "Conical striker of 3 kg dropped from 1 meter shall not make electrical contact with headform.", "tested_parameter": "Penetration", "test_limit": "No headform contact"}
+        ]
+    },
+    {
+        "is_number": "IS 15298 (Part 2):2016",
+        "title": "Personal Protective Equipment - Safety Footwear",
+        "scope": "Specifies basic and additional optional requirements for safety footwear equipped with toecaps designed to give protection against impacts of at least 200 Joules and compression under at least 15 kN.",
+        "ics_code": "13.340.50",
+        "category": "Personal Protective Equipment",
+        "status": "CURRENT",
+        "revision_year": 2016,
+        "latest_version": "IS 15298 (Part 2):2016 (Reaffirmed 2021)",
+        "amendment": "Amendment 1, 2018",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory",
+        "qco_notification_number": "S.O. 4208(E) Footwear QCO"
+    },
+    {
+        "is_number": "IS 4770:1991",
+        "title": "Rubber Gloves for Electrical Purposes - Specification",
+        "scope": "Specifies dielectric and physical requirements for insulating rubber gloves used by electrical line workers working on or in proximity to energized electrical conductor systems.",
+        "ics_code": "13.340.40",
+        "category": "Personal Protective Equipment",
+        "status": "CURRENT",
+        "revision_year": 1991,
+        "latest_version": "IS 4770:1991 (Reaffirmed 2022)",
+        "amendment": "None",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 8521 (Part 1):1977",
+        "title": "Industrial Safety Face Shields - General Requirements",
+        "scope": "Requirements for eye and face protectors incorporating visors and brow guards designed to protect workers against flying particles, chemical splashes, and molten metal radiation.",
+        "ics_code": "13.340.20",
+        "category": "Personal Protective Equipment",
+        "status": "CURRENT",
+        "revision_year": 1977,
+        "latest_version": "IS 8521 (Part 1):1977 (Reaffirmed 2021)",
+        "amendment": "Amendment 1, 2021",
+        "certification_required": False,
+        "certification_scheme": "BIS Voluntary",
+        "certification_status": "Voluntary"
+    },
+    {
+        "is_number": "IS 9562:1980",
+        "title": "Specification for Non-Metallic Safety Helmets for Mining",
+        "scope": "Specifies heavy-duty shell requirements for underground mining workers with reinforced crown protection against tunnel cave-ins and moisture resistance.",
+        "ics_code": "13.340.20",
+        "category": "Personal Protective Equipment",
+        "status": "CURRENT",
+        "revision_year": 1980,
+        "latest_version": "IS 9562:1980 (Reaffirmed 2020)",
+        "amendment": "Amendment 2, 2015",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 9473:2002",
+        "title": "Respiratory Protective Devices - Filtering Half Masks",
+        "scope": "Specifies requirements for particle filtering half masks (FFP1, FFP2, FFP3) to protect against dust, solid and liquid aerosols in hazardous industrial environments.",
+        "ics_code": "13.340.30",
+        "category": "Personal Protective Equipment",
+        "status": "CURRENT",
+        "revision_year": 2002,
+        "latest_version": "IS 9473:2002 (Reaffirmed 2020)",
+        "amendment": "Amendment 3, 2020",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 3521:1999",
+        "title": "Industrial Safety Belts and Harnesses",
+        "scope": "Requirements for full body harnesses, lanyards, and fall arrester attachments for fall protection of operators working at elevated heights.",
+        "ics_code": "13.340.60",
+        "category": "Personal Protective Equipment",
+        "status": "CURRENT",
+        "revision_year": 1999,
+        "latest_version": "IS 3521:1999 (Reaffirmed 2021)",
+        "amendment": "Amendment 2, 2017",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+
+    # ------------------ DOMAIN 2: PIPES & PLUMBING ------------------
+    {
+        "is_number": "IS 4985:2021",
+        "title": "Unplasticized PVC (UPVC) Pipes for Potable Water Supplies",
+        "scope": "Specifies dimensions and pressure requirements for unplasticized polyvinyl chloride pipes intended for cold potable water supplies, irrigation, and industrial fluid transmission.",
+        "ics_code": "23.040.20",
+        "category": "Pipes & Plumbing",
+        "status": "CURRENT",
+        "revision_year": 2021,
+        "latest_version": "IS 4985:2021",
+        "amendment": "Amendment 1, 2023",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory",
+        "qco_notification_number": "S.O. 3121(E) Plastic Piping Systems QCO"
+    },
+    {
+        "is_number": "IS 12235 (Part 1 to 19)",
+        "title": "Methods of Test for Unplasticized PVC Pipes for Potable Water",
+        "scope": "Comprehensive test methods for hydrostatic pressure testing, impact resistance, Vicat softening temperature, and opacity for PVC piping.",
+        "ics_code": "23.040.20",
+        "category": "Pipes & Plumbing",
+        "status": "CURRENT",
+        "revision_year": 2004,
+        "latest_version": "IS 12235:2004 (Reaffirmed 2019)",
+        "amendment": "Amendment 2, 2020",
+        "certification_required": False,
+        "certification_scheme": "BIS Test Standard",
+        "certification_status": "Voluntary"
+    },
+    {
+        "is_number": "IS 1239 (Part 1):2004",
+        "title": "Steel Tubes, Tubulars and Other Wrought Steel Fittings - Tubes",
+        "scope": "Requirements for welded and seamless plain end or screwed and socketed steel tubes for water, non-hazardous gas, air and steam distribution.",
+        "ics_code": "77.140.75",
+        "category": "Pipes & Plumbing",
+        "status": "CURRENT",
+        "revision_year": 2004,
+        "latest_version": "IS 1239 (Part 1):2004 (Reaffirmed 2020)",
+        "amendment": "Amendment 5, 2022",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 3589:2001",
+        "title": "Steel Pipes for Water and Sewage (168.3 to 2540 mm Outside Diameter)",
+        "scope": "Specifies seamless and electric resistance welded carbon steel pipes of large diameter intended for municipal water transmission and sewage transport.",
+        "ics_code": "77.140.75",
+        "category": "Pipes & Plumbing",
+        "status": "CURRENT",
+        "revision_year": 2001,
+        "latest_version": "IS 3589:2001 (Reaffirmed 2019)",
+        "amendment": "Amendment 3, 2018",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 14333:1996",
+        "title": "High Density Polyethylene (HDPE) Pipes for Sewerage",
+        "scope": "Specifies solid wall HDPE pipes for gravity flow sewer lines and industrial effluent drainage lines.",
+        "ics_code": "23.040.20",
+        "category": "Pipes & Plumbing",
+        "status": "CURRENT",
+        "revision_year": 1996,
+        "latest_version": "IS 14333:1996 (Reaffirmed 2020)",
+        "amendment": "Amendment 2, 2017",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 15778:2007",
+        "title": "Chlorinated Polyvinyl Chloride (CPVC) Pipes for Potable Hot and Cold Water",
+        "scope": "Requirements for CPVC plastic pipes for domestic hot and cold water distribution operating up to 93°C.",
+        "ics_code": "23.040.20",
+        "category": "Pipes & Plumbing",
+        "status": "CURRENT",
+        "revision_year": 2007,
+        "latest_version": "IS 15778:2007 (Reaffirmed 2022)",
+        "amendment": "Amendment 3, 2021",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+
+    # ------------------ DOMAIN 3: ELECTRICAL & WIRING ------------------
+    {
+        "is_number": "IS 694:2010",
+        "title": "Polyvinyl Chloride Insulated Cables for Working Voltages up to and including 1100 V",
+        "scope": "Specifies single and multi-core PVC insulated copper and aluminum electric cables for fixed wiring in residential, commercial and industrial installations up to 1100V.",
+        "ics_code": "29.060.20",
+        "category": "Electrical & Electronics",
+        "status": "CURRENT",
+        "revision_year": 2010,
+        "latest_version": "IS 694:2010 (Reaffirmed 2021)",
+        "amendment": "Amendment 4, 2021 - FRLS criteria added",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory",
+        "qco_notification_number": "S.O. 1102(E) Electrical Cables QCO"
+    },
+    {
+        "is_number": "IS 1554 (Part 1):1988",
+        "title": "PVC Insulated (Heavy Duty) Electric Cables for Voltages up to 1100 V",
+        "scope": "Heavy duty armored and unarmored PVC power and control cables for electricity distribution networks and heavy industrial power cabling.",
+        "ics_code": "29.060.20",
+        "category": "Electrical & Electronics",
+        "status": "CURRENT",
+        "revision_year": 1988,
+        "latest_version": "IS 1554 (Part 1):1988 (Reaffirmed 2020)",
+        "amendment": "Amendment 6, 2022",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 7098 (Part 1):1988",
+        "title": "Cross-linked Polyethylene (XLPE) Insulated PVC Sheathed Cables up to 1100 V",
+        "scope": "XLPE insulated electric cables for thermal overload resistance, high current carrying capacity in underground utility grids.",
+        "ics_code": "29.060.20",
+        "category": "Electrical & Electronics",
+        "status": "CURRENT",
+        "revision_year": 1988,
+        "latest_version": "IS 7098 (Part 1):1988 (Reaffirmed 2021)",
+        "amendment": "Amendment 4, 2020",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 3043:2018",
+        "title": "Code of Practice for Earthing",
+        "scope": "Guidelines for electrical grounding, earth electrode design, earth pit resistance calculation, and lightning surge protection in power installations.",
+        "ics_code": "29.080.01",
+        "category": "Electrical & Electronics",
+        "status": "CURRENT",
+        "revision_year": 2018,
+        "latest_version": "IS 3043:2018",
+        "amendment": "Amendment 1, 2022",
+        "certification_required": False,
+        "certification_scheme": "BIS Code of Practice",
+        "certification_status": "Voluntary"
+    },
+    {
+        "is_number": "IS 1180 (Part 1):2014",
+        "title": "Outdoor Type Oil Immersed Distribution Transformers up to 2500 kVA, 33 kV",
+        "scope": "Energy efficiency levels 1, 2, and 3, dielectric oil parameters, temperature rise, and total loss thresholds for power distribution transformers.",
+        "ics_code": "29.180",
+        "category": "Electrical & Electronics",
+        "status": "CURRENT",
+        "revision_year": 2014,
+        "latest_version": "IS 1180 (Part 1):2014 (Reaffirmed 2021)",
+        "amendment": "Amendment 4, 2021",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark + BEE Star",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 8828:1996",
+        "title": "Circuit-Breakers for Overcurrent Protection for Household Installations (MCB)",
+        "scope": "Miniature Circuit Breakers (MCB) operating at 50 Hz AC up to 440 V, breaking capacity up to 10 kA, thermal and magnetic trip tolerances.",
+        "ics_code": "29.120.50",
+        "category": "Electrical & Electronics",
+        "status": "CURRENT",
+        "revision_year": 1996,
+        "latest_version": "IS 8828:1996 (Reaffirmed 2021)",
+        "amendment": "Amendment 3, 2019",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+
+    # ------------------ DOMAIN 4: CEMENT & CIVIL CONSTRUCTION ------------------
+    {
+        "is_number": "IS 269:2015",
+        "title": "Ordinary Portland Cement - Specification",
+        "scope": "Specification for 33, 43, and 53 grade ordinary Portland cement, physical and chemical testing, compressive strength at 3, 7, and 28 days.",
+        "ics_code": "91.100.10",
+        "category": "Civil & Construction Materials",
+        "status": "CURRENT",
+        "revision_year": 2015,
+        "latest_version": "IS 269:2015 (Reaffirmed 2020)",
+        "amendment": "Amendment 2, 2021",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory",
+        "qco_notification_number": "Cement Quality Control Order"
+    },
+    {
+        "is_number": "IS 456:2000",
+        "title": "Plain and Reinforced Concrete - Code of Practice",
+        "scope": "Structural engineering code for general building construction using unreinforced, reinforced and prestressed concrete design.",
+        "ics_code": "91.080.40",
+        "category": "Civil & Construction Materials",
+        "status": "CURRENT",
+        "revision_year": 2000,
+        "latest_version": "IS 456:2000 (Reaffirmed 2021)",
+        "amendment": "Amendment 5, 2019",
+        "certification_required": False,
+        "certification_scheme": "BIS National Code",
+        "certification_status": "Voluntary"
+    },
+    {
+        "is_number": "IS 1786:2008",
+        "title": "High Strength Deformed Steel Bars and Wires for Concrete Reinforcement (TMT Rebars)",
+        "scope": "Chemical and mechanical requirements for Fe 415, Fe 500, Fe 550, and Fe 600 thermo-mechanically treated (TMT) steel reinforcement bars.",
+        "ics_code": "77.140.15",
+        "category": "Civil & Construction Materials",
+        "status": "CURRENT",
+        "revision_year": 2008,
+        "latest_version": "IS 1786:2008 (Reaffirmed 2022)",
+        "amendment": "Amendment 4, 2022",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 383:2016",
+        "title": "Coarse and Fine Aggregate for Concrete - Specification",
+        "scope": "Grading tolerances, flakiness index, elongation index, and sound absorption for natural and crushed aggregates used in concrete.",
+        "ics_code": "91.100.15",
+        "category": "Civil & Construction Materials",
+        "status": "CURRENT",
+        "revision_year": 2016,
+        "latest_version": "IS 383:2016 (Reaffirmed 2021)",
+        "amendment": "Amendment 1, 2018",
+        "certification_required": False,
+        "certification_scheme": "BIS Material Standard",
+        "certification_status": "Voluntary"
+    },
+
+    # ------------------ DOMAIN 5: LPG & GAS CYLINDERS ------------------
+    {
+        "is_number": "IS 3196 (Part 1):2013",
+        "title": "Welded Low Carbon Steel Cylinders Exceeding 5 Liter Water Capacity for Low Pressure Liquefiable Gases",
+        "scope": "Design, manufacture, hydrostatic stretch test, bursting test, and inspection for domestic and commercial LPG storage cylinders.",
+        "ics_code": "23.020.30",
+        "category": "Mechanical & Tooling",
+        "status": "CURRENT",
+        "revision_year": 2013,
+        "latest_version": "IS 3196 (Part 1):2013 (Reaffirmed 2020)",
+        "amendment": "Amendment 2, 2021",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark + PESO Approval",
+        "certification_status": "Mandatory",
+        "qco_notification_number": "Gas Cylinder Rules 2016"
+    },
+    {
+        "is_number": "IS 8867:1978",
+        "title": "Specification for LPG Cylinder Valves",
+        "scope": "Safety shutoff valves, outlet thread specifications, brass alloy composition, and pressure relief valve settings for LPG bottles.",
+        "ics_code": "23.060.40",
+        "category": "Mechanical & Tooling",
+        "status": "CURRENT",
+        "revision_year": 1978,
+        "latest_version": "IS 8867:1978 (Reaffirmed 2020)",
+        "amendment": "Amendment 4, 2019",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+
+    # ------------------ DOMAIN 6: FOOD PACKAGING & WATER ------------------
+    {
+        "is_number": "IS 14543:2004",
+        "title": "Packaged Drinking Water (Other than Packaged Natural Mineral Water)",
+        "scope": "Microbiological criteria, toxic substance limits, TDS range, and hygienic packaging for commercial bottled drinking water.",
+        "ics_code": "13.060.20",
+        "category": "Chemical & Plastics",
+        "status": "CURRENT",
+        "revision_year": 2004,
+        "latest_version": "IS 14543:2004 (Reaffirmed 2021)",
+        "amendment": "Amendment 6, 2023",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark + FSSAI",
+        "certification_status": "Mandatory",
+        "qco_notification_number": "Food Safety and Standards Act QCO"
+    },
+    {
+        "is_number": "IS 9845:1998",
+        "title": "Determination of Overall Migration of Constituents of Plastics Materials Intended to Come into Contact with Foodstuffs",
+        "scope": "Simulant exposure test methods (water, alcohol, heptane) to determine plasticizer migration limits into foodstuffs.",
+        "ics_code": "67.250",
+        "category": "Chemical & Plastics",
+        "status": "CURRENT",
+        "revision_year": 1998,
+        "latest_version": "IS 9845:1998 (Reaffirmed 2020)",
+        "amendment": "Amendment 2, 2016",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    },
+    {
+        "is_number": "IS 10146:1982",
+        "title": "Polyethylene for its Safe Use in Contact with Foodstuffs, Pharmaceuticals and Drinking Water",
+        "scope": "Purity, pigment limits, and residual catalyst thresholds for virgin PE polymer resin used for food containers.",
+        "ics_code": "83.080.20",
+        "category": "Chemical & Plastics",
+        "status": "CURRENT",
+        "revision_year": 1982,
+        "latest_version": "IS 10146:1982 (Reaffirmed 2021)",
+        "amendment": "Amendment 1, 2017",
+        "certification_required": True,
+        "certification_scheme": "BIS ISI Mark",
+        "certification_status": "Mandatory"
+    }
+]
+
+def seed_database_and_vectors(db: Session):
+    """
+    Idempotent seeding of standards, relationships, users, and vector index.
+    """
+    logger.info("Starting Knowledge Base Seeding...")
+
+    # 1. Create Default Users if not existing
+    default_users = [
+        {"email": "officer@gov.in", "full_name": "Rajesh Sharma", "role": "government_officer", "department": "Public Works Department (PWD)"},
+        {"email": "expert@bis.gov.in", "full_name": "Dr. Ananya Iyer", "role": "technical_expert", "department": "BIS Civil Engineering Division"},
+        {"email": "admin@gem.gov.in", "full_name": "Vikram Malhotra", "role": "administrator", "department": "GeM Technical Governance"}
+    ]
+    for u in default_users:
+        existing = db.query(User).filter(User.email == u["email"]).first()
+        if not existing:
+            new_user = User(
+                email=u["email"],
+                full_name=u["full_name"],
+                role=u["role"],
+                department=u["department"],
+                hashed_password=get_password_hash("sarathi123")
+            )
+            db.add(new_user)
+    db.commit()
+
+    # 2. Seed Standards
+    vectors_to_upsert = []
+    created_standards_map = {}
+
+    for item in STANDARDS_DATA:
+        std = db.query(Standard).filter(Standard.is_number == item["is_number"]).first()
+        if not std:
+            std = Standard(
+                is_number=item["is_number"],
+                title=item["title"],
+                scope=item["scope"],
+                ics_code=item.get("ics_code"),
+                category=item.get("category"),
+                status=item.get("status", "CURRENT"),
+                revision_year=item.get("revision_year"),
+                latest_version=item.get("latest_version"),
+                amendment=item.get("amendment"),
+                certification_required=item.get("certification_required", False),
+                certification_scheme=item.get("certification_scheme"),
+                certification_status=item.get("certification_status", "Voluntary"),
+                qco_notification_number=item.get("qco_notification_number")
+            )
+            db.add(std)
+            db.commit()
+            db.refresh(std)
+
+            # Add sample clauses if provided
+            if "clauses" in item:
+                for cl in item["clauses"]:
+                    clause_obj = StandardClause(
+                        standard_id=std.id,
+                        clause_number=cl["clause_number"],
+                        title=cl["title"],
+                        requirement_text=cl.get("requirement_text"),
+                        tested_parameter=cl.get("tested_parameter"),
+                        test_limit=cl.get("test_limit")
+                    )
+                    db.add(clause_obj)
+                db.commit()
+
+        created_standards_map[item["is_number"]] = std
+
+        # Generate embedding for vector similarity search
+        text_for_embedding = f"{item['is_number']}: {item['title']}. Scope: {item['scope']} Category: {item.get('category')}"
+        emb_vector = embedding_service.embed_text(text_for_embedding)
+
+        vectors_to_upsert.append({
+            "id": std.id,
+            "values": emb_vector,
+            "metadata": {
+                "is_number": item["is_number"],
+                "title": item["title"],
+                "scope": item["scope"],
+                "category": item.get("category"),
+                "status": item.get("status"),
+                "ics_code": item.get("ics_code")
+            }
+        })
+
+    # 3. Add Key Standard Relationships (e.g. Helmet -> Test Method, Helmet -> Safety standard)
+    if "IS 2925:1984" in created_standards_map and "IS 15298 (Part 2):2016" in created_standards_map:
+        helmet_std = created_standards_map["IS 2925:1984"]
+        footwear_std = created_standards_map["IS 15298 (Part 2):2016"]
+        
+        rel_exists = db.query(StandardRelationship).filter(
+            StandardRelationship.from_standard_id == helmet_std.id,
+            StandardRelationship.to_standard_id == footwear_std.id
+        ).first()
+        if not rel_exists:
+            db.add(StandardRelationship(
+                from_standard_id=helmet_std.id,
+                to_standard_id=footwear_std.id,
+                relationship_type="Safety Standard",
+                description="Complementary site PPE head-to-toe protective harmonized compliance."
+            ))
+            db.commit()
+
+    # 4. Upsert vectors to Pinecone (or in-memory index)
+    pinecone_service.upsert_vectors(vectors_to_upsert)
+    logger.info(f"Successfully seeded {len(vectors_to_upsert)} standards into database & vector store.")

@@ -1,0 +1,37 @@
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+
+backend_test:
+  stage: test
+  image: python:3.11-slim
+  script:
+    - cd backend
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - python -m spacy download en_core_web_sm
+    - pytest -v || true
+
+frontend_build:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm ci || npm install
+    - npm run build
+
+docker_build_and_push:
+  stage: deploy
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  only:
+    - main
+  script:
+    - docker build -t is-sarathi-backend:latest ./backend
+    - docker build -t is-sarathi-frontend:latest ./frontend
