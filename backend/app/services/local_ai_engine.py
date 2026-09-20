@@ -214,10 +214,31 @@ class LocalAIStandardsEngine:
 
         raw_confidence = (0.50 * min(sim_score * 1.5, 1.0)) + (0.25 * domain_alignment) + (0.25 * coverage_ratio)
         calibrated_conf = round(raw_confidence * 100, 1)
-        calibrated_conf = min(max(calibrated_conf, 55.0), 94.0)
+        calibrated_conf = min(calibrated_conf, 94.0)
 
         if domain_alignment < 0.3:
             calibrated_conf = min(calibrated_conf, 72.0)
+
+        # Strict dataset-bound Quality Gate: Abstain if match confidence or similarity is below minimum threshold
+        if calibrated_conf < 45.0 or sim_score < 0.15:
+            logger.warning(f"Abstention triggered: low confidence ({calibrated_conf}%) or similarity ({sim_score}) for {primary_number}")
+            return {
+                "top_standard": None,
+                "confidence": calibrated_conf,
+                "why_recommended": "No sufficiently grounded standard evidence matched this procurement requirement.",
+                "coverage_map": [],
+                "conflicts": [],
+                "gaps": [
+                    "NO APPLICABLE STANDARD FOUND IN CURRENT DATASET",
+                    "The requested procurement requirement is not covered by the current IS-SARATHI knowledge base."
+                ],
+                "why_not_alternatives": why_not[:4],
+                "abstention_triggered": True,
+                "abstention_reason": (
+                    "NO APPLICABLE STANDARD FOUND IN CURRENT DATASET — "
+                    "The requested procurement requirement is not covered by the current IS-SARATHI knowledge base."
+                )
+            }
 
         return {
             "top_standard": primary,

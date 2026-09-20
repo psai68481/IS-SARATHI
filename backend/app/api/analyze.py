@@ -287,6 +287,28 @@ def analyze_tender_specification(req: TenderAnalysisRequest, db: Session = Depen
         rejected_standards=rejected_records
     )
 
+    # Check if AI engine triggered abstention due to low confidence / quality gate
+    if ai_result.get("abstention_triggered"):
+        duration_ms = round((time.time() - start_time) * 1000, 2)
+        audit_id = str(uuid.uuid4())
+        return TenderAnalysisResponse(
+            tenderQuery=query_text,
+            extractedRequirements=extracted_params,
+            recommendations=[],
+            conflicts=[],
+            gaps=ai_result.get("gaps", [
+                "NO APPLICABLE STANDARD FOUND IN CURRENT DATASET",
+                "The requested procurement requirement is not covered by the current IS-SARATHI knowledge base."
+            ]),
+            processingTimeMs=duration_ms,
+            abstentionReason=ai_result.get("abstention_reason", (
+                "NO APPLICABLE STANDARD FOUND IN CURRENT DATASET — "
+                "The requested procurement requirement is not covered by the current IS-SARATHI knowledge base."
+            )),
+            status="NOT_FOUND_IN_DATASET",
+            auditTrailId=audit_id
+        )
+
     # Stage 8: Assemble Recommendations with strict clause integrity & verified relationships
     recommendations = []
 
